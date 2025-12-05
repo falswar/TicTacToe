@@ -183,12 +183,10 @@ def Restart():
     WinnerText = ""
     WinningCombo = None
 
-
 #print the grid 
 DrawLines()
 
 gameOn = True
-
 while gameOn:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -237,11 +235,9 @@ while gameOn:
     screen.fill(BoardColor)
     DrawLines()
     XO()
-
+    Text()
     if WinningLine:
         draw_win_line(WinningLine)
-
-    Text()
     pygame.display.update()
 
 
