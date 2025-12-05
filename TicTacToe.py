@@ -50,10 +50,10 @@ WinColor= (255, 20, 147)
 #winning grid 
 def draw_win_line(combo):
     a, b, c = combo
-    row1 = a//3
-    row2 = c//3
-    col1 = a%3
-    col2 = c%3
+    row1 = a // 3
+    row2 = c // 3
+    col1 = a % 3
+    col2 = c % 3
 
     x1 = 100 + col1*square + square // 2
     x2 = 100 + col2*square + square // 2
@@ -142,6 +142,7 @@ def MiniMax(b, depth, MaxPlayer):
     if CheckWinningLines(b, 1): return depth - 10 #Human wins return negative score
     #we are tryign to maxsimize AI score and minimizw human score 
     if CheckDraw(b): return 0 
+
 #if its the Max player aka AI , set best to a very small number for then maximasing the value 
 #AI check all availables moves and how human will play next turn (optimally) and picks movment with maximum score
     if MaxPlayer:
@@ -177,16 +178,18 @@ def AI():
 
 #restaring the game 
 def Restart():
-    global Board, GameOver, WinnerText, WinningCombo
+    global Board, GameOver, Winner, WinningLine
     Board = [0] * 9
     GameOver = False
-    WinnerText = ""
-    WinningCombo = None
+    Winner = ""
+    WinningLine = None
+
 
 #print the grid 
 DrawLines()
 
 gameOn = True
+
 while gameOn:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -235,9 +238,11 @@ while gameOn:
     screen.fill(BoardColor)
     DrawLines()
     XO()
-    Text()
+
     if WinningLine:
         draw_win_line(WinningLine)
+
+    Text()
     pygame.display.update()
 
 
