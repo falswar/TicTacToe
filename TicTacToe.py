@@ -143,9 +143,12 @@ def CheckDraw(b):
 #the Implemntation of the MiniMax algorithm 
 def MiniMax(b, depth, MaxPlayer):
     #check for the boared state 
-    if CheckWinningLines(b, 2): return 10 - depth #AI wins return positive score
-    if CheckWinningLines(b, 1): return depth - 10 #Human wins return negative score
-    if CheckDraw(b): return 0 
+    if CheckWinningLines(b, 2): 
+        return 10 - depth #AI wins return positive score
+    if CheckWinningLines(b, 1): 
+        return depth - 10 #Human wins return negative score
+    if CheckDraw(b): 
+        return 0 
 
     #if its the Max player turn aka AI , set best to a very small number for then maximazing the value , AI check all availables moves and how human will play accordinglly to each of the moves next turn (assuming optimally) and picks movment with the maximum score
     if MaxPlayer:
