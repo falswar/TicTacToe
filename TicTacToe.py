@@ -1,272 +1,488 @@
 import pygame
 import sys
 import random
+import math
 
-#game board measurments and configrations 
-width = 800
-height = 900
+# game board measurements and configurations
+width = 500
+height = 600
 
-#board colors
-BoardColor = (255, 192, 203)  
-LineColor= (255, 105, 180)  
-symbolColor= (255, 105, 180)  
-TextColor = (255, 255, 255) 
+# board colors
+BoardColor = (255, 192, 203)
+LineColor = (255, 105, 180)
+symbolColor = (255, 62, 163)
+TextColor = (255, 255, 255)
 
-#starting the game using pygame
 pygame.init()
-screen = pygame.display.set_mode((width, height)) 
+screen = pygame.display.set_mode((width, height))
 pygame.display.set_caption("Tic Tac Toe - MiniMax AI")
-font1 = pygame.font.SysFont("helvetica", 40)
-font2 = pygame.font.SysFont("helvetica", 60) 
+font1 = pygame.font.SysFont("helvetica", 24)
+font2 = pygame.font.SysFont("helvetica", 36)
 
-screen.fill(BoardColor)  
+screen.fill(BoardColor)
 
-#setting the board to start 
-Board = [0] * 9   
-GameOver = False 
+# -------------------- GAME STATE --------------------
+Board = [0] * 9
+GameOver = False
 Winner = ""
-WinningLine= None         #check and store a winning line that consist of 3 cells either horizantal vertical or diagonal
-Difficulty = "Difficult"  #Easy or Difficult
-square= 600 // 3          #one square containing the player symbol X or O
-LineWidth = 15 
+WinningLine = None
+Difficulty = "Difficult"       # "Easy" or "Difficult"
+PlayerSymbol = "X"             # "X" or "O" (human)
+GameState = "MENU"             # "MENU" or "PLAYING"
+square = 360 // 3
+LineWidth = 10
+ShowMenu = False               # in-game ≡ menu open or not
 
-# making the grid lines 
+# board vertical offset (so "Mode:" doesn't overlap)
+BOARD_TOP = 60                 # board spans 60 → 60+360=420
+
+# score stats
+PlayerWins = 0
+AIWins = 0
+
+# animation for winning line & play again button
+win_anim_progress = 1.0
+pulse_phase = 0.0
+
+# in-game menu button (≡)
+menu_button_rect = pygame.Rect(width - 60, 10, 40, 30)
+
+# menu panel: Restart / Start Page / Switch Difficulty
+menu_panel_rect = pygame.Rect(width - 210, 50, 200, 150)
+restart_option_rect = pygame.Rect(
+    menu_panel_rect.x + 10, menu_panel_rect.y + 10,
+    menu_panel_rect.width - 20, 35
+)
+startpage_option_rect = pygame.Rect(
+    menu_panel_rect.x + 10, menu_panel_rect.y + 55,
+    menu_panel_rect.width - 20, 35
+)
+switchmode_option_rect = pygame.Rect(
+    menu_panel_rect.x + 10, menu_panel_rect.y + 100,
+    menu_panel_rect.width - 20, 35
+)
+
+# Play Again button (after game over) – clearly below board
+play_again_rect = pygame.Rect(width // 2 - 90, 470, 180, 55)
+
+# ------- START MENU RECTS (difficulty + symbol + start) -------
+menu_easy_rect  = pygame.Rect(70, 250, 150, 50)
+menu_diff_rect  = pygame.Rect(280, 250, 150, 50)
+menu_playX_rect = pygame.Rect(70, 320, 150, 50)
+menu_playO_rect = pygame.Rect(280, 320, 150, 50)
+menu_start_rect = pygame.Rect(130, 410, 240, 60)
+
+
+# -------------------- DRAWING HELPERS --------------------
 def DrawLines():
-    for i in range(1,3): 
-        pygame.draw.line(screen, LineColor, (100, i*square), (700, i*square), LineWidth)
-        pygame.draw.line(screen, LineColor, (100 + i*square, 0), (100 + i*square, 600), LineWidth)
+    for i in range(1, 3):
+        # horizontal
+        pygame.draw.line(
+            screen, LineColor,
+            (70, BOARD_TOP + i * square),
+            (430, BOARD_TOP + i * square),
+            LineWidth
+        )
+        # vertical
+        pygame.draw.line(
+            screen, LineColor,
+            (70 + i * square, BOARD_TOP),
+            (70 + i * square, BOARD_TOP + 3 * square),
+            LineWidth
+        )
 
-WinColor= (255, 20, 147)   
-def DrawWinningLine(combo):
+
+WinColor = (255, 20, 147)
+
+
+def DrawWinningLine(combo, progress=1.0):
+    """Draw the winning line, optionally only a fraction of its full length (0–1)."""
     a, b, c = combo
     row1 = a // 3
     row2 = c // 3
     col1 = a % 3
     col2 = c % 3
-    x1 = 100 + col1*square + square // 2
-    x2 = 100 + col2*square + square // 2
-    y1 = row1*square + square // 2
-    y2 = row2*square + square // 2
-    pygame.draw.line(screen, WinColor, (x1, y1), (x2, y2), LineWidth) 
+    x1 = 70 + col1 * square + square // 2
+    x2 = 70 + col2 * square + square // 2
+    y1 = BOARD_TOP + row1 * square + square // 2
+    y2 = BOARD_TOP + row2 * square + square // 2
+
+    # clamp progress
+    p = max(0.0, min(1.0, progress))
+    x_mid = x1 + (x2 - x1) * p
+    y_mid = y1 + (y2 - y1) * p
+
+    pygame.draw.line(screen, WinColor, (x1, y1), (x_mid, y_mid), LineWidth)
 
 
-Radius= 80 
-Circulewidth= 15
-CrossWidth= 25
-space = 55 
+Radius = 50
+Circulewidth = 10
+CrossWidth = 15
+space = 35
 
-# printing X/O symbols on Board 
+
+def draw_X(row, col):
+    pygame.draw.line(
+        screen, symbolColor,
+        (70 + col * square + space, BOARD_TOP + row * square + space),
+        (70 + col * square + square - space, BOARD_TOP + row * square + square - space),
+        CrossWidth
+    )
+    pygame.draw.line(
+        screen, symbolColor,
+        (70 + col * square + space, BOARD_TOP + row * square + square - space),
+        (70 + col * square + square - space, BOARD_TOP + row * square + space),
+        CrossWidth
+    )
+
+
+def draw_O(row, col):
+    pygame.draw.circle(
+        screen, symbolColor,
+        (70 + col * square + square // 2, BOARD_TOP + row * square + square // 2),
+        Radius, Circulewidth
+    )
+
+
 def XO():
-    #for each spot on the tic tac toe board, set up the cordinates of the rows and cols to start
-    for i in range(9): 
-        row = i // 3 
+    ai_symbol = "O" if PlayerSymbol == "X" else "X"
+    for i in range(9):
+        row = i // 3
         col = i % 3
+        if Board[i] == 1:  # human
+            if PlayerSymbol == "X":
+                draw_X(row, col)
+            else:
+                draw_O(row, col)
+        elif Board[i] == 2:  # AI
+            if ai_symbol == "X":
+                draw_X(row, col)
+            else:
+                draw_O(row, col)
 
-        #if this position in the Board have a value of 1 then its taken by player X , draw the X symbol by drawing two lines
-        if Board[i] == 1:   
-            pygame.draw.line(screen, symbolColor,
-                                (100+col*square+space, row*square+space),
-                                (100+col*square+square-space, row*square+square-space),
-                                CrossWidth)
-            pygame.draw.line(screen, symbolColor,
-                                (100+col*square+space, row*square+square-space),
-                                (100+col*square+square-space, row*square+space),
-                                CrossWidth)
 
-        #if this position is not taken by Player X check if its taken by player O, if the position have the value 2 then it i staken by player O, draw the circule 
-        elif Board[i] == 2:  
-            pygame.draw.circle(screen, symbolColor,
-                                (100+col*square+square//2, row*square+square//2),
-                                Radius, Circulewidth) 
+def DrawMenuButton():
+    pygame.draw.rect(screen, (255, 105, 180), menu_button_rect, border_radius=5)
+    line_margin_x = 8
+    line_margin_y = 6
+    line_spacing = 8
+    for i in range(3):
+        y = menu_button_rect.y + line_margin_y + i * line_spacing
+        pygame.draw.line(
+            screen, (255, 255, 255),
+            (menu_button_rect.x + line_margin_x, y),
+            (menu_button_rect.x + menu_button_rect.width - line_margin_x, y),
+            2
+        )
 
-#printing the match/game info 
+
+def DrawMenuPanel():
+    pygame.draw.rect(screen, (255, 182, 193), menu_panel_rect, border_radius=10)
+
+    pygame.draw.rect(screen, (255, 105, 180), restart_option_rect, border_radius=8)
+    pygame.draw.rect(screen, (255, 105, 180), startpage_option_rect, border_radius=8)
+    pygame.draw.rect(screen, (255, 105, 180), switchmode_option_rect, border_radius=8)
+
+    restart_label = font1.render("Restart Game", True, TextColor)
+    start_label = font1.render("Go to Start Page", True, TextColor)
+    mode_text = f"Switch to {'Easy' if Difficulty == 'Difficult' else 'Difficult'}"
+    mode_label = font1.render(mode_text, True, TextColor)
+
+    screen.blit(
+        restart_label,
+        (restart_option_rect.centerx - restart_label.get_width() // 2,
+         restart_option_rect.centery - restart_label.get_height() // 2)
+    )
+    screen.blit(
+        start_label,
+        (startpage_option_rect.centerx - start_label.get_width() // 2,
+         startpage_option_rect.centery - start_label.get_height() // 2)
+    )
+    screen.blit(
+        mode_label,
+        (switchmode_option_rect.centerx - mode_label.get_width() // 2,
+         switchmode_option_rect.centery - mode_label.get_height() // 2)
+    )
+
+
+def DrawPlayAgainButton():
+    global pulse_phase
+    # pulsing outer glow
+    glow = (math.sin(pulse_phase) + 1) / 2  # 0..1
+    inflated = play_again_rect.inflate(int(16 * glow), int(10 * glow))
+    pygame.draw.rect(screen, (255, 192, 203), inflated, border_radius=16)
+
+    pygame.draw.rect(screen, (255, 105, 180), play_again_rect, border_radius=12)
+    RestartLabel = font1.render("Play Again", True, TextColor)
+    screen.blit(
+        RestartLabel,
+        (play_again_rect.centerx - RestartLabel.get_width() // 2,
+         play_again_rect.centery - RestartLabel.get_height() // 2)
+    )
+
+
 def Text():
-    PlayersLabel = font1.render("Player: X     VS     AI: O", True, TextColor)
-    screen.blit(PlayersLabel, (width // 2 - PlayersLabel.get_width() // 2, 650))
+    # Mode info at the VERY top
+    mode_label = font1.render(f"Mode: {Difficulty}", True, TextColor)
+    screen.blit(mode_label, (20, 10))
 
-    #setting up the difficulty options (easy mode or difficult mode)
-    EasyColor = (100, 200, 100) if Difficulty == "Easy" else (50, 50, 50)
-    DifficultColor = (200, 50, 50) if Difficulty == "Difficult" else (50, 50, 50)
+    # Win stats instead of showing symbols
+    score_label = font1.render(f"You: {PlayerWins}     VS     AI: {AIWins}", True, TextColor)
+    screen.blit(score_label, (width // 2 - score_label.get_width() // 2, 430))
 
-    pygame.draw.rect(screen, EasyColor, (200, 720, 150, 60), border_radius=10)
-    pygame.draw.rect(screen, DifficultColor, (450, 720, 150, 60), border_radius=10)
-
-    EasyLabel = font1.render("Easy", True, TextColor)
-    DifficultLabel = font1.render("Difficult", True, TextColor)
-
-    screen.blit(EasyLabel, (275 - EasyLabel.get_width() // 2, 735))
-    screen.blit(DifficultLabel, (525 - DifficultLabel.get_width() // 2, 735))
-
-    #setting the draw and play again option
-    pygame.draw.rect(screen, (50, 50, 50), (width // 2 - 100, 800, 200, 60), border_radius=10)
-    RestartLabel = font1.render("Play Again!", True, (255, 255, 0))
-    screen.blit(RestartLabel, (width // 2 - RestartLabel.get_width() // 2, 810))
-
-    #if there is a winner , print the winnig message message 
     if Winner:
         WinnerMsg = font2.render(Winner, True, TextColor)
-        screen.blit(WinnerMsg, (width // 2 - WinnerMsg.get_width()//2, 840)) 
+        # toool el text
+        screen.blit(WinnerMsg, (width // 2 - WinnerMsg.get_width() // 2, 530))
 
 
-#Starting the game logic
+# -------------------- START MENU DRAWING --------------------
+def DrawStartMenu():
+    screen.fill(BoardColor)
+
+    title = font2.render("Tic Tac Toe - Minimax AI", True, TextColor)
+    screen.blit(title, (width // 2 - title.get_width() // 2, 80))
+
+    subtitle = font1.render("Choose difficulty and your symbol", True, TextColor)
+    screen.blit(subtitle, (width // 2 - subtitle.get_width() // 2, 130))
+
+    # difficulty buttons - selected is darker pink
+    easy_color = (255, 20, 147) if Difficulty == "Easy" else (255, 182, 193)
+    diff_color = (255, 20, 147) if Difficulty == "Difficult" else (255, 182, 193)
+
+    pygame.draw.rect(screen, easy_color, menu_easy_rect, border_radius=10)
+    pygame.draw.rect(screen, diff_color, menu_diff_rect, border_radius=10)
+
+    easy_label = font1.render("Easy", True, TextColor)
+    diff_label = font1.render("Difficult", True, TextColor)
+
+    screen.blit(easy_label, (menu_easy_rect.centerx - easy_label.get_width() // 2,
+                             menu_easy_rect.centery - easy_label.get_height() // 2))
+    screen.blit(diff_label, (menu_diff_rect.centerx - diff_label.get_width() // 2,
+                             menu_diff_rect.centery - diff_label.get_height() // 2))
+
+    # symbol buttons - selected is darker pink
+    x_color = (255, 20, 147) if PlayerSymbol == "X" else (255, 182, 193)
+    o_color = (255, 20, 147) if PlayerSymbol == "O" else (255, 182, 193)
+
+    pygame.draw.rect(screen, x_color, menu_playX_rect, border_radius=10)
+    pygame.draw.rect(screen, o_color, menu_playO_rect, border_radius=10)
+
+    x_label = font1.render("Play as X", True, TextColor)
+    o_label = font1.render("Play as O", True, TextColor)
+
+    screen.blit(x_label, (menu_playX_rect.centerx - x_label.get_width() // 2,
+                          menu_playX_rect.centery - x_label.get_height() // 2))
+    screen.blit(o_label, (menu_playO_rect.centerx - o_label.get_width() // 2,
+                          menu_playO_rect.centery - o_label.get_height() // 2))
+
+    # start button - deep pink
+    pygame.draw.rect(screen, (255, 20, 147), menu_start_rect, border_radius=12)
+    start_label = font1.render("Start Game", True, TextColor)
+    screen.blit(start_label, (menu_start_rect.centerx - start_label.get_width() // 2,
+                              menu_start_rect.centery - start_label.get_height() // 2))
 
 
-#check for available movments by checking any empty cell (returning the index of cells containing 0)
+# -------------------- GAME LOGIC --------------------
 def AvailableMoves(b):
-    return [i for i, Available in enumerate(b) if Available == 0] 
+    return [i for i, Available in enumerate(b) if Available == 0]
 
-#board layout is going to be like this :
-# 0 | 1 | 2
-# 3 | 4 | 5
-# 6 | 7 | 8 
 
-#check for any winning lines possible >> rows,cols and the two diagnol lines
 def CheckWinningLines(Board, p):
     WinningLines = [
-        (0,1,2) , (3,4,5), (6,7,8), #rows 
-        (0,3,6) , (1,4,7) , (2,5,8), #cols
-        (0,4,8) , (2,4,6) #diagnol lines 
+        (0, 1, 2), (3, 4, 5), (6, 7, 8),  # rows
+        (0, 3, 6), (1, 4, 7), (2, 5, 8),  # cols
+        (0, 4, 8), (2, 4, 6)              # diagonals
     ]
-
-    #check if any of the winning lines contain the same player in all of the positions , if so the line is a winning line ; return the combo , or return nothing
     for combo in WinningLines:
         a, b, c = combo
-        if Board[a] == Board[b] == Board[c] == p: 
-            return combo 
+        if Board[a] == Board[b] == Board[c] == p:
+            return combo
     return None
 
-#check for draw state, if no empty cells are in the board (no cell have 0) means all spots are taken by one of the players
+
 def CheckDraw(b):
-    return 0 not in b  
+    return 0 not in b
 
 
-#the Implemntation of the MiniMax algorithm 
 def MiniMax(b, depth, MaxPlayer):
-    #check for the boared state 
-    if CheckWinningLines(b, 2): 
-        return 10 - depth #AI wins return positive score
-    if CheckWinningLines(b, 1): 
-        return depth - 10 #Human wins return negative score
-    if CheckDraw(b): 
-        return 0 
+    if CheckWinningLines(b, 2):
+        return 10 - depth
+    if CheckWinningLines(b, 1):
+        return depth - 10
+    if CheckDraw(b):
+        return 0
 
-    #if its the Max player turn aka AI , set best to a very small number for then maximazing the value , AI check all availables moves and how human will play accordinglly to each of the moves next turn (assuming optimally) and picks movment with the maximum score
-    if MaxPlayer:
+    if MaxPlayer:  # AI = maximizing player (2)
         best = -1000
-        for m in AvailableMoves(b):                 #loop over all possible moves for the max player 
-            b[m] = 2                                #placeholder to test all the other movments against 
-            score = MiniMax(b, depth + 1, False)    #recursivly call the function but here its the min player turn (human player) simulate the player move based on the previous move here 
-            b[m] = 0                                #remove the mark of the max player last move to test a diffrent available mode
-            best = max(best, score)                 # check the score against the best score and take the maximum to keep record of the actual best move to make 
-        return best 
-
-    #we set best for a very big number to start minimazing , this is the part for the min player turn (human player)
-    else:                                            
+        for m in AvailableMoves(b):
+            b[m] = 2
+            score = MiniMax(b, depth + 1, False)
+            b[m] = 0
+            best = max(best, score)
+        return best
+    else:          # Human = minimizing player (1)
         best = 1000
-        for m in AvailableMoves(b):                 #just like the Max turn , but the oppisiot to minimize this player advantages 
+        for m in AvailableMoves(b):
             b[m] = 1
-            score = MiniMax(b, depth + 1, True)     #we call the function recusvly to the max player turn to check for the movments based on this current move
-            b[m] = 0                                #undo the move above , its important to do this since this function simulates all moves possible but makes no actual move in the game 
-            best = min(best, score)                 #return the worst possible case meaning the case with the min score as best
+            score = MiniMax(b, depth + 1, True)
+            b[m] = 0
+            best = min(best, score)
         return best
 
 
-#here the AI decides on its next move based on the value of each move using the above MiniMax algorithm  
 def AI():
-    # Random moves based on the empty spots on the board , no much testing 
     if Difficulty == "Easy":
         available = AvailableMoves(Board)
         if available:
             move = random.choice(available)
             Board[move] = 2
-
-    # Difficult mode makes smarter choices and better moves using MiniMax algorithm
-    else: 
+    else:
         best_score = -1000
         move = None
         for m in AvailableMoves(Board):
             Board[m] = 2
-            #using MiniMax algorithm the AI evaluate all possible moves and picks the moves with the better score
             score = MiniMax(Board, 0, False)
             Board[m] = 0
-            if score > best_score:    
+            if score > best_score:
                 best_score = score
                 move = m
         if move is not None:
             Board[move] = 2
 
-#restaring the game by returning all varibales to their original state
+
 def Restart():
-    global Board, GameOver, Winner, WinningLine, Difficulty
-    Board = [0] * 9 
-    GameOver = False 
+    global Board, GameOver, Winner, WinningLine, ShowMenu, win_anim_progress
+    Board = [0] * 9
+    GameOver = False
     Winner = ""
     WinningLine = None
+    ShowMenu = False
+    win_anim_progress = 1.0
 
 
-#print the grid to start the game 
-DrawLines()
+def StartGame():
+    global GameState
+    Restart()
+    GameState = "PLAYING"
+    # If player chose O, AI (as X) starts first.
+    if PlayerSymbol == "O":
+        AI()
+
+
+# -------------------- MAIN LOOP --------------------
+clock = pygame.time.Clock()
 gameOn = True
 while gameOn:
-    #quiting game 
+    dt = clock.tick(60) / 1000.0  # frame time (seconds)
+    pulse_phase += dt * 4         # speed of pulsing
+
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
-            sys.exit() 
+            sys.exit()
 
-        #Restart option display 
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            x, y = event.pos
-            if width // 2 - 100 <= x <= width // 2 + 100 and 800 <= y <= 860:
-                Restart()
-            if not GameOver or all(cell == 0 for cell in Board): #if the game is not on aor no places are empty in the game 
-                if 200 <= x <= 350 and 720 <= y <= 780:
+        # ---------- EVENTS ON START MENU ----------
+        if GameState == "MENU":
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                x, y = event.pos
+                if menu_easy_rect.collidepoint(x, y):
                     Difficulty = "Easy"
-                    Restart()
-                elif 450 <= x <= 600 and 720 <= y <= 780:
+                elif menu_diff_rect.collidepoint(x, y):
                     Difficulty = "Difficult"
+                elif menu_playX_rect.collidepoint(x, y):
+                    PlayerSymbol = "X"
+                elif menu_playO_rect.collidepoint(x, y):
+                    PlayerSymbol = "O"
+                elif menu_start_rect.collidepoint(x, y):
+                    StartGame()
+
+        # ---------- EVENTS DURING GAME PLAY ----------
+        elif GameState == "PLAYING":
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                x, y = event.pos
+
+                # ≡ menu toggle
+                if menu_button_rect.collidepoint(x, y):
+                    ShowMenu = not ShowMenu
+                    continue
+
+                # in-game menu panel options
+                if ShowMenu:
+                    if restart_option_rect.collidepoint(x, y):
+                        Restart()
+                        if PlayerSymbol == "O":
+                            AI()
+                        continue
+                    if startpage_option_rect.collidepoint(x, y):
+                        Restart()
+                        GameState = "MENU"
+                        continue
+                    if switchmode_option_rect.collidepoint(x, y):
+                        Difficulty = "Easy" if Difficulty == "Difficult" else "Difficult"
+                        ShowMenu = False
+                        continue
+                    # click outside panel & button closes menu
+                    if (not menu_panel_rect.collidepoint(x, y) and
+                            not menu_button_rect.collidepoint(x, y)):
+                        ShowMenu = False
+
+                # Play Again button after game over
+                if GameOver and play_again_rect.collidepoint(x, y):
                     Restart()
+                    if PlayerSymbol == "O":
+                        AI()
+                    continue
 
+                # Handle board clicks only if game is active
+                if not GameOver and BOARD_TOP <= y <= BOARD_TOP + 3 * square and 70 <= x <= 430:
+                    row = (y - BOARD_TOP) // square
+                    col = (x - 70) // square
+                    index = row * 3 + col
 
-        if event.type == pygame.MOUSEBUTTONDOWN and not GameOver: #ignore any clicks outside board
-            x, y = event.pos
-            if y > 600 or x < 100 or x > 700:
-                continue  
+                    if 0 <= index < 9 and Board[index] == 0:
+                        Board[index] = 1  # human move
+                        win = CheckWinningLines(Board, 1)
+                        if win:
+                            WinningLine = win
+                            Winner = "YOU WIN!"
+                            GameOver = True
+                            PlayerWins += 1
+                            win_anim_progress = 0.0
+                        elif CheckDraw(Board):
+                            Winner = "DRAW!"
+                            GameOver = True
+                        else:
+                            AI()
+                            win = CheckWinningLines(Board, 2)
+                            if win:
+                                WinningLine = win
+                                Winner = "AI WINS!"
+                                GameOver = True
+                                AIWins += 1
+                                win_anim_progress = 0.0
+                            elif CheckDraw(Board):
+                                Winner = "DRAW!"
+                                GameOver = True
 
-            row = y // square
-            col = (x - 100) // square
-            index = row * 3 + col
-            if Board[index] == 0: #if spot is empty player can play in it 
-                Board[index] = 1 
-                #check for any winning line/draw state after the move with the current board state and display it and end the game by setting GameOver to True
-                win = CheckWinningLines(Board, 1)
-                if win:
-                    WinningLine = win
-                    Winner = "YOU WIN!"
-                    GameOver = True
-                elif CheckDraw(Board):
-                    Winner = "DRAW!"
-                    GameOver = True
+    # progress winning-line animation
+    if GameOver and WinningLine and win_anim_progress < 1.0:
+        win_anim_progress += dt * 3  # animation speed
 
-                #if no, then AI playes its turn check for any winning line/draw state after the move with the current board state and display it and end the game by setting GameOver to True
-                else: 
-                    AI() 
-                    win = CheckWinningLines(Board, 2)
-                    if win:
-                        WinningLine = win
-                        Winner = "AI WINS!"
-                        GameOver = True
-                    elif CheckDraw(Board):
-                        Winner = "DRAW!"
-                        GameOver = True 
+    # ---------- DRAWING ----------
+    if GameState == "MENU":
+        DrawStartMenu()
+    else:
+        screen.fill(BoardColor)
+        DrawLines()
+        XO()
+        if WinningLine:
+            DrawWinningLine(WinningLine, win_anim_progress)
+        Text()
+        DrawMenuButton()
+        if ShowMenu:
+            DrawMenuPanel()
+        if GameOver:
+            DrawPlayAgainButton()
 
-    #setting the board by drawing all the grid lines, symbols, text and if any player wins the line on the winning line
-    screen.fill(BoardColor) 
-    DrawLines()
-    XO()
-    if WinningLine:
-        DrawWinningLine(WinningLine)
-    Text()
     pygame.display.update()
-
-
