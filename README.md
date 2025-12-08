@@ -4,8 +4,8 @@
 
 - **Smart AI Opponent**: Uses the MiniMax algorithm
 - **Two Difficulty Modes**: 
-  - **Easy**: Random move selection for casual play
-  - **Hard**: Unbeatable AI using MiniMax algorithm
+  - Easy
+  - Hard
 - **Choose to play as X or O**
 - **Score Tracking**
 
