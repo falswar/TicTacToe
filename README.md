@@ -1,4 +1,4 @@
-# Tic Tac Toe - with MiniMax
+# Tic Tac Toe with MiniMax
 
 ## Features
 
