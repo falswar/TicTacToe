@@ -2,23 +2,19 @@
 
 ## Features
 
-- **Smart AI Opponent**: Uses the MiniMax algorithm for optimal gameplay
+- **Smart AI Opponent**: Uses the MiniMax algorithm
 - **Two Difficulty Modes**: 
   - **Easy**: Random move selection for casual play
   - **Hard**: Unbeatable AI using MiniMax algorithm
-- **Symbol Selection**: Choose to play as X or O
-- **Beautiful Pink UI**: Eye-catching gradient pink theme with smooth animations
-- **Score Tracking**: Keeps track of wins for both player and AI
-- **Interactive Menu**: In-game menu for restarting, changing difficulty, or returning to start screen
-- **Winning Animation**: Animated line drawing to highlight the winning combination
+- **Choose to play as X or O**
+- **Score Tracking**
 
 ## Purpose
 
-This project demonstrates the implementation of the **MiniMax algorithm** in game theory, showcasing how artificial intelligence can make optimal decisions in a zero-sum game. The game provides an educational example of:
+This project demonstrates the implementation of the **MiniMax algorithm** in game theory, showing how artificial intelligence can make optimal decisions in a zero-sum game. The game provides an example of:
 
 - Game tree traversal
 - Recursive algorithm implementation
-- UI/UX design with Pygame
 - State management in game development
 
 ## Installation & Setup
