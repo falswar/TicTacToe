@@ -62,13 +62,13 @@ py TicTacToe.py
 ### During Gameplay
 - **Make Your Move**: Click on any empty cell on the board to place your symbol
 - **AI Response**: The AI will automatically make its move after yours
-- **Win Condition**: Get three of your symbols in a row (horizontally, vertically, or diagonally)
-- **Score Display**: Your wins vs AI wins are shown below the board
+- **Win Condition**: Get three of your symbols in a row
+- **Score Display**: Your wins vs AI wins are counted below the board
 
-### In-Game Menu (≡ button)
+### In-Game Menu
 Click the menu button in the top-right corner to access:
-- **Restart Game**: Start a fresh round with the same settings
-- **Go to Start Page**: Return to the main menu to change difficulty or symbol
+- **Restart Game**: Start a new round with the same settings
+- **Go to Start Page**
 - **Switch Difficulty**: Toggle between Easy and Hard mode mid-game
 
 ### After Game Ends
