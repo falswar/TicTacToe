@@ -1,6 +1,4 @@
-# Tic Tac Toe - MiniMax AI
-
-A beautiful, interactive Tic Tac Toe game built with Python and Pygame, featuring an unbeatable AI opponent powered by the MiniMax algorithm.
+# Tic Tac Toe - with MiniMax
 
 ## Features
 
