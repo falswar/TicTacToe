@@ -26,7 +26,7 @@ Board = [0] * 9
 GameOver = False
 Winner = ""
 WinningLine = None
-Difficulty = "Difficult"       # "Easy" or "Difficult"
+Difficulty = "Hard"       # "Easy" or "Hard"
 PlayerSymbol = "X"             # "X" or "O" (human)
 GameState = "MENU"             # "MENU" or "PLAYING"
 square = 360 // 3
@@ -185,7 +185,7 @@ def DrawMenuPanel():
 
     restart_label = font1.render("Restart Game", True, TextColor)
     start_label = font1.render("Go to Start Page", True, TextColor)
-    mode_text = f"Switch to {'Easy' if Difficulty == 'Difficult' else 'Difficult'}"
+    mode_text = f"Switch to {'Easy' if Difficulty == 'Hard' else 'Hard'}"
     mode_label = font1.render(mode_text, True, TextColor)
 
     screen.blit(
@@ -248,13 +248,13 @@ def DrawStartMenu():
 
     # difficulty buttons - selected is darker pink
     easy_color = (255, 20, 147) if Difficulty == "Easy" else (255, 182, 193)
-    diff_color = (255, 20, 147) if Difficulty == "Difficult" else (255, 182, 193)
+    diff_color = (255, 20, 147) if Difficulty == "Hard" else (255, 182, 193)
 
     pygame.draw.rect(screen, easy_color, menu_easy_rect, border_radius=10)
     pygame.draw.rect(screen, diff_color, menu_diff_rect, border_radius=10)
 
     easy_label = font1.render("Easy", True, TextColor)
-    diff_label = font1.render("Difficult", True, TextColor)
+    diff_label = font1.render("Hard", True, TextColor)
 
     screen.blit(easy_label, (menu_easy_rect.centerx - easy_label.get_width() // 2,
                              menu_easy_rect.centery - easy_label.get_height() // 2))
@@ -389,7 +389,7 @@ while gameOn:
                 if menu_easy_rect.collidepoint(x, y):
                     Difficulty = "Easy"
                 elif menu_diff_rect.collidepoint(x, y):
-                    Difficulty = "Difficult"
+                    Difficulty = "Hard"
                 elif menu_playX_rect.collidepoint(x, y):
                     PlayerSymbol = "X"
                 elif menu_playO_rect.collidepoint(x, y):
@@ -419,7 +419,7 @@ while gameOn:
                         GameState = "MENU"
                         continue
                     if switchmode_option_rect.collidepoint(x, y):
-                        Difficulty = "Easy" if Difficulty == "Difficult" else "Difficult"
+                        Difficulty = "Easy" if Difficulty == "Hard" else "Hard"
                         ShowMenu = False
                         continue
                     # click outside panel & button closes menu
