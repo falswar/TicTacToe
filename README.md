@@ -1,8 +1,8 @@
-# 🎮 Tic Tac Toe - MiniMax AI
+# Tic Tac Toe - MiniMax AI
 
 A beautiful, interactive Tic Tac Toe game built with Python and Pygame, featuring an unbeatable AI opponent powered by the MiniMax algorithm.
 
-## ✨ Features
+## Features
 
 - **Smart AI Opponent**: Uses the MiniMax algorithm for optimal gameplay
 - **Two Difficulty Modes**: 
@@ -14,7 +14,7 @@ A beautiful, interactive Tic Tac Toe game built with Python and Pygame, featurin
 - **Interactive Menu**: In-game menu for restarting, changing difficulty, or returning to start screen
 - **Winning Animation**: Animated line drawing to highlight the winning combination
 
-## 🎯 Purpose
+## Purpose
 
 This project demonstrates the implementation of the **MiniMax algorithm** in game theory, showcasing how artificial intelligence can make optimal decisions in a zero-sum game. The game provides an educational example of:
 
@@ -23,7 +23,7 @@ This project demonstrates the implementation of the **MiniMax algorithm** in gam
 - UI/UX design with Pygame
 - State management in game development
 
-## 🚀 Installation & Setup
+## Installation & Setup
 
 ### Prerequisites
 
