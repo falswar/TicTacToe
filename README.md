@@ -84,10 +84,7 @@ The AI in Hard mode uses the **MiniMax algorithm**, a recursive decision-making 
 1. **Maximizing Player (AI)**: Tries to maximize its score
 2. **Minimizing Player (Human)**: Tries to minimize the AI's score
 3. **Game Tree Exploration**: The algorithm explores all possible future game states
-4. **Scoring System**:
-   - AI wins: +10 points (minus depth for faster wins)
-   - Human wins: -10 points (plus depth)
-   - Draw: 0 points
+4. **Scoring System**
 5. **Optimal Decision**: The AI selects the move with the highest score
 
 This makes the AI virtually **unbeatable** in Hard mode - the best you can do is draw!
