@@ -50,7 +50,7 @@ pip install pygame
 ```powershell
 python TicTacToe.py
 ```
-or simply
+**or simply**
 ```powershell
 py TicTacToe.py
 ```
